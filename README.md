@@ -35,7 +35,6 @@ This was made for macOS and presumably works with Linux, but if you are using Li
 
 Note that you can run this creation script with certs generated from somewhere else, not the wack "everything self-signed" model that I provide in `make-certs.sh`. Think about doing that maybe
 
-
 ## Do I need this
 
-Probably not, if you're aking that question.
+Probably not, if you're aking that question. You might need it if you want to have a Mac do your work for CI/CD processes.
