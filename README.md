@@ -1,5 +1,7 @@
 # jenkins-inbound-agent-with-docker
 
+Warning: I didn't design this with security in mind. There is no warranty. I have no idea what I am doing, etc.
+
 This repo provides a Dockerfile as well as the scripts you need to get an inbound agent with Docker support connected to Jenkins. It also supports protecting the Docker daemon required to be exposed with a cert.
 
 This was made for macOS and presumably works with Linux, but if you are using Linux, you may as well expose the Docker socket rather than run a `socat` container. Therefore, maybe this isn't for Linux users.
@@ -37,4 +39,4 @@ Note that you can run this creation script with certs generated from somewhere e
 
 ## Do I need this
 
-Probably not, if you're aking that question. You might need it if you want to have a Mac do your work for CI/CD processes.
+Probably not, if you're asking that question. You might need it if you want to have a Mac do your work for CI/CD processes.
