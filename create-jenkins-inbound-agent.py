@@ -73,7 +73,7 @@ socat_container = DOCKER_CLIENT.containers.run(
 )
 
 # Jenkins agent container
-command = [args.secret, args.name, "-url", args.url]
+command = ["-url", args.url, args.secret, args.name]
 volumes = {}
 environment = {
     "DOCKER_HOST": f"{socket.gethostname()}:2376",
