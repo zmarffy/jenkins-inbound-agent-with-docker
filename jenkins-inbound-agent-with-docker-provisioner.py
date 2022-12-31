@@ -92,7 +92,6 @@ def jenkins_request(
 parser = argparse.ArgumentParser()
 
 # Create
-parser.add_argument("--jenkins-url", help="Jenkins controller URL (create only)")
 parser.add_argument(
     "--agent-description", help="Jenkins agent description (create only)"
 )
@@ -107,11 +106,15 @@ parser.add_argument(
 )
 
 # Delete
-parser.add_argument("--delete", action="store_true", help="delete the specified agent (delete only)")
+parser.add_argument(
+    "--delete", action="store_true", help="delete the specified agent (delete only)"
+)
 
 # All
+parser.add_argument("jenkins_url", help="Jenkins controller URL")
 parser.add_argument("agent_name", help="Jenkins agent name")
 parser.add_argument("--jenkins-username", default="admin", help="Jenkins username")
+parser.add_argument("--docker", action="store_true", help="add Docker support")
 parser.add_argument("--ssh-docker-username", help="SSH username for Docker host")
 parser.add_argument("--ssh-docker-host", help="hostname for Docker host")
 parser.add_argument(
@@ -193,6 +196,13 @@ if not args.delete:
         raise ValueError("Agent secret not found in Jenkins API response")
     secret = secret.text
 
+    if args.docker:
+        environment = {
+            "DOCKER_HOST": DOCKER_HOST_STRING,
+        }
+    else:
+        environment = None
+
     DOCKER_CLIENT.images.build(
         path=".", tag="jenkins-inbound-agent-with-docker", rm=True, quiet=False
     )
@@ -200,9 +210,7 @@ if not args.delete:
     container: docker.models.containers.Container = DOCKER_CLIENT.containers.create(
         "jenkins-inbound-agent-with-docker",
         name=CONTAINER_NAME,
-        environment={
-            "DOCKER_HOST": DOCKER_HOST_STRING,
-        },
+        environment=environment,
         command=["-url", JENKINS_URL, secret, args.agent_name],
         network="host",
         cgroupns="host",
@@ -211,22 +219,24 @@ if not args.delete:
 
     container.start()
     print(f"Created container {CONTAINER_NAME}")
-    run_command_in_docker_container(container, 'mkdir "/home/jenkins/.ssh"')
-    run_command_in_docker_container(
-        container,
-        '/bin/sh -c \'ssh-keygen -t ed25519 -C "$HOSTNAME" -f "/home/jenkins/.ssh/id_rsa" -N ""\'',
-    )
-    run_command_in_docker_container(
-        container,
-        '/bin/sh -c \'sshpass -e ssh-copy-id -o StrictHostKeyChecking=accept-new -p "$SSH_DOCKER_PORT" "$DOCKER_H"\'',
-        environment={
-            "SSHPASS": DOCKER_HOST_PASSWORD,
-            "SSH_DOCKER_PORT": args.ssh_docker_port,
-            "DOCKER_H": DOCKER_HOST,
-        },
-    )
-    run_command_in_docker_container(container, "docker ps")
-    print(f"Added Docker support for container {CONTAINER_NAME}")
+
+    if args.docker:
+        run_command_in_docker_container(container, 'mkdir "/home/jenkins/.ssh"')
+        run_command_in_docker_container(
+            container,
+            '/bin/sh -c \'ssh-keygen -t ed25519 -C "$HOSTNAME" -f "/home/jenkins/.ssh/id_rsa" -N ""\'',
+        )
+        run_command_in_docker_container(
+            container,
+            '/bin/sh -c \'sshpass -e ssh-copy-id -o StrictHostKeyChecking=accept-new -p "$SSH_DOCKER_PORT" "$DOCKER_H"\'',
+            environment={
+                "SSHPASS": DOCKER_HOST_PASSWORD,
+                "SSH_DOCKER_PORT": args.ssh_docker_port,
+                "DOCKER_H": DOCKER_HOST,
+            },
+        )
+        run_command_in_docker_container(container, "docker ps")
+        print(f"Added Docker support for container {CONTAINER_NAME}")
 else:
     jenkins_request(
         SESSION,
@@ -238,16 +248,22 @@ else:
     )
     print("Deleted agent from Jenkins")
     container: docker.models.containers.Container = DOCKER_CLIENT.containers.get(CONTAINER_NAME)  # type: ignore
+    container_has_docker_support = bool(
+        run_command_in_docker_container(
+            container, "printenv DOCKER_HOST", acceptable_exit_codes=[0, 1]
+        )
+    )
     container_hostname = run_command_in_docker_container(container, "hostname")
     container.remove(force=True)
     print(f"Removed container {CONTAINER_NAME}")
-    docker_host_ssh_conn = Connection(
-        SSH_DOCKER_HOST,
-        user=SSH_DOCKER_USERNAME,
-        port=args.ssh_docker_port,
-        connect_kwargs={"password": DOCKER_HOST_PASSWORD},
-    )
-    docker_host_ssh_conn.run(
-        f"sed -i'.bak' '/{container_hostname}/d' \"$HOME/.ssh/authorized_keys\""
-    )
-    print("Removed container from Docker host's authorized_keys file")
+    if container_has_docker_support:
+        docker_host_ssh_conn = Connection(
+            SSH_DOCKER_HOST,
+            user=SSH_DOCKER_USERNAME,
+            port=args.ssh_docker_port,
+            connect_kwargs={"password": DOCKER_HOST_PASSWORD},
+        )
+        docker_host_ssh_conn.run(
+            f"sed -i'.bak' '/{container_hostname}/d' \"$HOME/.ssh/authorized_keys\""
+        )
+        print("Removed container from Docker host's authorized_keys file")

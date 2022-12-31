@@ -6,32 +6,24 @@ This repo provides a Dockerfile as well as the scripts you need to get an inboun
 
 ## Requirements
 
-- Python >= 3.6
+- Python >= 3.8
 - Docker
 - The stuff in `requirements.txt`
 
 ## Usage
 
 ```text
-usage: jenkins-inbound-agent-with-docker-provisioner.py [-h]
-                                                        [--jenkins-url JENKINS_URL]
-                                                        [--agent-description AGENT_DESCRIPTION]
-                                                        [--agent-executors AGENT_EXECUTORS]
-                                                        [--agent-labels [AGENT_LABELS ...]]
-                                                        [--delete]
-                                                        [--jenkins-username JENKINS_USERNAME]
-                                                        [--ssh-docker-username SSH_DOCKER_USERNAME]
-                                                        [--ssh-docker-host SSH_DOCKER_HOST]
+usage: jenkins-inbound-agent-with-docker-provisioner.py [-h] [--agent-description AGENT_DESCRIPTION] [--agent-executors AGENT_EXECUTORS] [--agent-labels [AGENT_LABELS ...]] [--delete]
+                                                        [--jenkins-username JENKINS_USERNAME] [--docker] [--ssh-docker-username SSH_DOCKER_USERNAME] [--ssh-docker-host SSH_DOCKER_HOST]
                                                         [--ssh-docker-port SSH_DOCKER_PORT]
-                                                        agent_name
+                                                        jenkins_url agent_name
 
 positional arguments:
+  jenkins_url           Jenkins controller URL
   agent_name            Jenkins agent name
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  --jenkins-url JENKINS_URL
-                        Jenkins controller URL (create only)
   --agent-description AGENT_DESCRIPTION
                         Jenkins agent description (create only)
   --agent-executors AGENT_EXECUTORS
@@ -41,6 +33,7 @@ optional arguments:
   --delete              delete the specified agent (delete only)
   --jenkins-username JENKINS_USERNAME
                         Jenkins username
+  --docker              add Docker support
   --ssh-docker-username SSH_DOCKER_USERNAME
                         SSH username for Docker host
   --ssh-docker-host SSH_DOCKER_HOST
