@@ -41,3 +41,8 @@ options:
   --ssh-docker-port SSH_DOCKER_PORT
                         port for SSH for Docker host
 ```
+
+## Notes
+
+- You must have SSH password auth enabled on the Docker host before running this, so that the container is automatically able to log in and drop off its key (this is unnecessary and subject to change)
+- You must have SSH key auth enabled on the Docker host in order to use it, as Docker over SSH does not accept password auth
