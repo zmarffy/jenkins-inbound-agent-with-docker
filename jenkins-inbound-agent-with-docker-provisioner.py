@@ -196,12 +196,13 @@ if not args.delete:
         raise ValueError("Agent secret not found in Jenkins API response")
     secret = secret.text
 
+    environment = {}
     if args.docker:
-        environment = {
-            "DOCKER_HOST": DOCKER_HOST_STRING,
-        }
-    else:
-        environment = None
+        environment.update(
+            {
+                "DOCKER_HOST": DOCKER_HOST_STRING,
+            }
+        )
 
     DOCKER_CLIENT.images.build(
         path=".", tag="jenkins-inbound-agent-with-docker", rm=True, quiet=False
