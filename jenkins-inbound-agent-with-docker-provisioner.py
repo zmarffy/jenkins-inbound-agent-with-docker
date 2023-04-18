@@ -205,7 +205,10 @@ if not args.delete:
         )
 
     DOCKER_CLIENT.images.build(
-        path=".", tag="jenkins-inbound-agent-with-docker", rm=True, quiet=False
+        path="images/latest",
+        tag="jenkins-inbound-agent-with-docker",
+        rm=True,
+        quiet=False,
     )
 
     container: docker.models.containers.Container = DOCKER_CLIENT.containers.create(
